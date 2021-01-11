@@ -1,0 +1,121 @@
+version: 2.1
+
+commands:
+  setup_gcr:
+    description: |
+      Authenticate with gcr.
+      Use the `docker login` method instead of setting up gcloud, because
+      that method is the simplest.
+    parameters:
+      json_key:
+        description:
+          A JSON key for a service account on GCR.
+        type: env_var_name
+      repository:
+        description:
+          Address of the repository to log in to.
+        type: string
+        default: https://gcr.io
+    steps:
+      - run:
+          name: Authenticate with gcr using `docker login`
+          command: |
+            echo "$<< parameters.json_key >>" | docker login -u _json_key --password-stdin "<< parameters.repository >>"
+
+  prepare_image:
+    description: |
+      Prepare a required image. This tries to load the image from the
+      container registry, and if it's not found, then it builds
+      the image using `make {the build_command parameter here}`.
+      This can be used to prepare either the "base" image or the "builder"
+      image, as selected using the `label` parameter.
+    parameters:
+      label:
+        description: |
+          Which image to prepare - base or build.
+        type: enum
+        enum:
+          - builder
+          - base
+      build_command:
+        description: |
+          If the image is not available, it will be built
+          using `make {this parameter}`.
+        type: string
+    steps:
+      - run:
+          name: Download the << parameters.label >> image from repository
+          command: |
+            make download_<< parameters.label >>_image && {
+              echo "<< parameters.label >> image found in repository"
+            } || {
+              echo "<< parameters.label >> image NOT found in repository. Building..."
+              make << parameters.build_command >>
+              echo "Publishing the << parameters.label >> image"
+              make publish_<< parameters.label >>_image
+              }
+
+jobs:
+  build:
+    machine: true
+    environment:
+      PROJECT_NAME: kavach-builds
+    steps:
+      - checkout
+      - setup_gcr:
+          json_key: GCLOUD_SERVICE_KEY
+      - prepare_image:
+          label: base
+          build_command: docker.base
+
+      - prepare_image:
+          label: builder
+          build_command: docker.builder
+
+      - run: make build_in_container
+      - run: make docker
+      - run:
+          name: Setup gcloud project
+          command: |
+            set -eux
+            echo ${GCLOUD_SERVICE_KEY} > service-key.json
+            gcloud config set project "${PROJECT_NAME}"
+            gcloud auth activate-service-account --key-file service-key.json
+      - run:
+          name: Publish image
+          command: |-
+            set -eux
+            make publish
+
+  publish_latest:
+    environment:
+      PROJECT_NAME: kavach-builds
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: Setup gcloud project
+          command: |
+            set -eux
+            echo ${GCLOUD_SERVICE_KEY} > service-key.json
+            gcloud config set project "${PROJECT_NAME}"
+            gcloud auth activate-service-account --key-file service-key.json
+      - run:
+          name: Publish the `latest` tag
+          command: |-
+            set -eux
+            IMAGE_NAME=$(make show-image-name)
+            LATEST_NAME="$(echo $IMAGE_NAME | cut -f 1 -d ':'):latest"
+            gcloud container images add-tag --quiet $IMAGE_NAME $LATEST_NAME
+
+workflows:
+  build_and_test:
+    jobs:
+      - build
+      - publish_latest:
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - build
