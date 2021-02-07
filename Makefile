@@ -21,6 +21,7 @@ define run_in_container
 		"${BUILDER_NAME}:${BUILDER_TAG}" ${1}
 endef
 
+
 %.image.exists:
 	@docker inspect $* >/dev/null 2>&1 || \
 		(echo "Image $* does not exist. Use 'make docker.builder' or 'make docker.base'." && false)
@@ -105,9 +106,6 @@ show-image-name:
 
 .PHONY: opensource-submodule
 opensource-submodule:
-	@if [ -z "${DISABLE_OPENSOURCE_UPDATE}" ] ;\
- 	then \
 		echo "Updating OpenSource git submodule."; \
 		git submodule update --init -- builder/OpenSource; \
 		git submodule update --remote -- builder/OpenSource; \
-	fi
