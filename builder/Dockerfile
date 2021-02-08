@@ -9,8 +9,6 @@ RUN apt-get update && apt-get install -y \
     curl=7.47.'*' \
     flex=2.6.0-'*' \
     bison=2:3.0.4.'*' \
-    libaudit-dev=1:2.'*' \
-    libauparse-dev=1:2.'*' \
     libev-dev=1:4.22-'*' \
     libglib2.0-dev=2.48.2-'*'
 

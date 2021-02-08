@@ -27,6 +27,5 @@ int packet_capture_handler(struct _KTRACE_ARGS* args);
 int set_port_info(int from, int to, char* str, int* counter, int* ingress, int* egress,
                   int* ports_for_exper, int* wildcard);
 
-int get_spd_send_interval(void);
 char* get_host_ip(void);
 #endif

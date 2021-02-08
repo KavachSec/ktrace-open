@@ -51,9 +51,6 @@ void set_log_module( int module) {
 
   KLOG_MODULE = 0;
 
-  if ( (module & MODULE_SPD) == MODULE_SPD) {
-    KLOG_MODULE |= MODULE_SPD;
-  }
   if ( (module & MODULE_DNS)  == MODULE_DNS) {
     KLOG_MODULE |= MODULE_DNS;
   }

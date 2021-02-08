@@ -4,7 +4,6 @@
 #include "stats.h"
 #include "dns_discovery.h"
 #include "telemetry.h"
-#include "spd.h"
 #include "spurious_activity.h"
 
 #include <assert.h>
@@ -26,7 +25,6 @@ static const char POD_CIDR[] = "POD_CIDR";
 static const char SERVICE_CIDR[] = "SERVICE_CIDR";
 static const char HOST_IP[] = "HOST_IP";
 
-static const char MODULE_SPD_STR[] = "spd";
 static const char MODULE_KTRACE_STR[] = "ktrace";
 static const char MODULE_DNS_STR[] = "dns";
 
@@ -55,11 +53,9 @@ static struct bpf_program filter;
 KTRACE_CONFIG_T ktrace_config;
 
 static int enable_dns_telemetry = false;
-static int enable_process_discovery = false;
 static char host_ip[IP_LEN] = {0,};
 static char hostInterfaceIPs[1024] = {0,};
 static int event_listener_port = 0;
-static int spd_send_interval = 60;
 static int monitor_tcp_syn_attack = false;
 
 CLUSTER_IP *service_cidr_list;
@@ -121,10 +117,6 @@ int update_pcap_stat() {
   return 1;
 }
 
-int get_spd_send_interval(void) {
-  return spd_send_interval;
-}
-
 char* get_host_ip(void) {
   return host_ip;
 }
@@ -161,10 +153,7 @@ void get_log_module( char* val, int* log_module) {
     return;
   }
 
-  if(strcasecmp(val, MODULE_SPD_STR) == 0) {
-    KLOG_INFO(MODULE_KTRACE, "Module set to : %s", MODULE_SPD_STR);
-    *log_module = MODULE_SPD;
-  } else if(strcasecmp(val, MODULE_DNS_STR) == 0) {
+  if(strcasecmp(val, MODULE_DNS_STR) == 0) {
     KLOG_INFO(MODULE_KTRACE, "Module set to : %s", MODULE_DNS_STR);
     *log_module = MODULE_DNS;
   } else if(strcasecmp(val, MODULE_KTRACE_STR) == 0) {
@@ -612,7 +601,6 @@ int main(int argc, char** argv) {
   signal(SIGTERM, clean_up);
 
   int rc = 0, k;
-  bool auditd_thread_initialized = false;
   void *ret;
   char *tenv = NULL;
 
@@ -707,38 +695,17 @@ int main(int argc, char** argv) {
   init_stats();
 
 
-  tenv = getenv("PROCESS_DISCOVERY");
-  if ( tenv && ( strcasecmp(tenv, "true") == 0 ) ) {
-    enable_process_discovery = true;
-  }
-
   tenv = getenv("DNS_TELEMETRY");
   if ( tenv && ( strcasecmp(tenv, "true") == 0 ) ) {
     enable_dns_telemetry = true;
   }
 
-  tenv = getenv("SPD_INTERVAL");
-  if ( tenv ) {
-    if ( ( spd_send_interval = atoi(tenv) ) <= 0 ) {
-       spd_send_interval = 60;
-    }
-  }
-
-  if(enable_dns_telemetry == true || 
-       enable_process_discovery == true ) {
+  if(enable_dns_telemetry == true ) { 
     init_telemetry();
   }
 
   dns_init();
   KLOG_DEBUG(MODULE_KTRACE,"Dns initialized.");
-
-  if ( enable_process_discovery == true ) {
-    event_listener_port = get_event_listener_port();
-    if (start_auditd_thread() == 0) {
-          auditd_thread_initialized = true;
-          KLOG_ERR(MODULE_KTRACE, "auditd_thread_initialized %d", auditd_thread_initialized);
-     }
-  }
 
   tenv = getenv("MONITOR_TCP_SYN_ATTACK");
   if ( tenv && ( strcasecmp(tenv, "true") == 0 ) ) {
@@ -758,10 +725,6 @@ int main(int argc, char** argv) {
     if (rc != 0) {
       if (strlen(err_msg)) fprintf(stderr, "%s", err_msg);
     }
-  }
-
-  if (auditd_thread_initialized == true) {
-    wait_for_audit_thread_to_terminate();
   }
 
   if ( monitor_tcp_syn_attack == true ) {
