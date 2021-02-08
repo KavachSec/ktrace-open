@@ -38,7 +38,7 @@ void print_usage(void) {
   printf("\n\t-egress: List of egress listener ports.");
   printf("\n\t-internal-domain: List of internal domain ip list.");
   printf("\n\t-log-path (optional)");
-  printf("\n\t-log-module (optional) eg : ktrace or dns or spd");
+  printf("\n\t-log-module (optional) eg : ktrace or dns");
   printf("\n\t-pcap: packet capture disable/enable");
 }
 

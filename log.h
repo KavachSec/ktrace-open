@@ -39,9 +39,8 @@ enum { LOG_CRIT = 1, LOG_ERROR = 2, LOG_WARN = 4, LOG_INFO = 8, LOG_DEBUG = 16, 
 
 enum {
     MODULE_NONE = 0x1,
-    MODULE_SPD = 0x2,
-    MODULE_DNS = 0x4,
-    MODULE_KTRACE = 0x8,
+    MODULE_DNS = 0x2,
+    MODULE_KTRACE = 0x4,
     MODULE_ALL = 0xFF,
 };
 

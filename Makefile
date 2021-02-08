@@ -30,7 +30,7 @@ endef
 ktrace_stats: ktrace_stats.c ktrace_shm.h stats.c stats.h ktrace_shm.c log.c log.h
 	${CC} ${CFLAGS} -o $@ ktrace_stats.c ktrace_shm.c stats.c log.c -lrt -pthread -static
 
-ktrace: ip_addr_hash.c ktrace.c ktrace_utils.c log.c dns_discovery.c ip_addr_hash.h ktrace.h ktrace_utils.h log.h ktrace_shm.h stats.c stats.h dns_discovery.h telemetry.h spd.h
+ktrace: ip_addr_hash.c ktrace.c ktrace_utils.c log.c dns_discovery.c ip_addr_hash.h ktrace.h ktrace_utils.h log.h ktrace_shm.h stats.c stats.h dns_discovery.h telemetry.h
 	${CC} ${CLFAGS} -o $@ ip_addr_hash.c \
                               ktrace.c \
                               ktrace_utils.c \
@@ -39,7 +39,6 @@ ktrace: ip_addr_hash.c ktrace.c ktrace_utils.c log.c dns_discovery.c ip_addr_has
                               stats.c \
                               dns_discovery.c \
                               telemetry.c \
-                              spd.c \
                               -I/usr/local/include/dssl \
                               -I/usr/local/ssl/include \
                               -I/usr/include/glib-2.0 \
@@ -47,7 +46,7 @@ ktrace: ip_addr_hash.c ktrace.c ktrace_utils.c log.c dns_discovery.c ip_addr_has
                               /usr/local/lib/libdssl.a \
                               -L/usr/local/lib \
                               -lpcap -lz -lssl -lcrypto -ldl \
-                              -lrt -pthread -laudit -lauparse -lev -lglib-2.0 -lm\
+                              -lrt -pthread -lev -lglib-2.0 -lm\
                               -static
 build: ktrace ktrace_stats
 
